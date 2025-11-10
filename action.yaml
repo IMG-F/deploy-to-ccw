@@ -1,6 +1,11 @@
 name: "CCW Deploy Action"
 description: "A GitHub Action to deploy work to CCW"
 author: "IMG"
+
+branding:
+  icon: arrow-up
+  color: green
+
 runs:
   using: "node20"
   main: "dist/index.js"
