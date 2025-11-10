@@ -1,0 +1,24 @@
+{
+  "name": "deploy-to-ccw",
+  "version": "1.0.0",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "build": "ncc build src/main.js -o dist"
+  },
+  "author": "IMG",
+  "license": "MIT",
+  "description": "",
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.1",
+    "ali-oss": "^6.23.0",
+    "archiver": "^7.0.1",
+    "axios": "^1.13.2",
+    "crypto-js": "^4.2.0",
+    "unzipper": "^0.12.3"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.4"
+  }
+}

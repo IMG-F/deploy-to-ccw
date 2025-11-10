@@ -1,0 +1,45 @@
+name: "CCW Deploy Action"
+description: "A GitHub Action to deploy work to CCW"
+author: "IMG"
+runs:
+  using: "node20"
+  main: "dist/index.js"
+
+inputs:
+  oid:
+    description: "Work id"
+    required: true
+  sb3FilePath:
+    description: "Path to the .sb3 file"
+    required: true
+  coverFilePath:
+    description: "Path to the cover image file"
+    required: true
+  title:
+    description: "Title of the work"
+    required: true
+  description:
+    description: "Description of the work"
+    required: false
+    default: ""
+  operatingInstruction:
+    description: "Operating instructions for the work"
+    required: false
+    default: ""
+  releaseDescription:
+    description: "Release description for the work"
+    required: false
+    default: ""
+  customVersion:
+    description: "Custom version for the work"
+    required: true
+  publishedFeedSwitch:
+    description: "Whether to publish to the feed (true/false)"
+    required: false
+    default: "true"
+  token:
+    description: "CCW API token"
+    required: true
+  userId:
+    description: "CCW User ID"
+    required: true
