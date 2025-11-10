@@ -46,7 +46,7 @@ export function main({
             return Promise.all([uploadCover(coverFilePath), getWorkDetail(oid)]);
         })
         .then(async ([coverFileName, res]) => {
-            const {featuredCoverLink, latestProjectLink, screenMode} = res?.body;
+            const {latestProjectLink, screenMode} = res?.body;
             const match = latestProjectLink.toString().match(/user_projects_sb3\/(\d+)\//);
             const userId = match ? match[1] : null;
             const newSb3FileUrl = `user_projects_sb3/${userId}/${crypto.randomUUID().replaceAll("-", "")}.sb3`;
@@ -77,7 +77,7 @@ export function main({
                 customVersion: customVersion,
                 publishedFeedSwitch: publishedFeedSwitch,
                 screenMode: screenMode,
-                featuredCoverLink: featuredCoverLink,
+                featuredCoverLink: assetsBaseUrl + coverFileName,
                 coverLink: assetsBaseUrl + coverFileName,
                 projectLink: assetsBaseUrl + newSb3FileUrl
             });
