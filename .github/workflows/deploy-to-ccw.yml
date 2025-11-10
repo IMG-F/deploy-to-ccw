@@ -1,0 +1,23 @@
+name: Test Deploy To CCW
+on:
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run my action
+        uses: ./
+        with:
+          oid: "690df4a46380320ffe36cdf7"
+          sb3FilePath: "./test/gal-test.sb3"
+          coverFilePath: "./test/944d0ede-00c9-4638-8b00-aa14cfd603da.png"
+          title: "发布测试"
+          description: "aaa"
+          operatingInstruction: "bbb"
+          releaseDescription: "ccc"
+          customVersion: "1.0.2"
+          publishedFeedSwitch: "false"
+          token: ${{ secrets.token }}
+          userId: ${{ secrets.userId }}
