@@ -5,9 +5,11 @@ import {getWorkDetail} from "./public/getWorkDetail.js";
 import archiver from "archiver";
 import {setAuthData} from "./utils/secret.js";
 import {submitWork} from "./public/submitWork.js";
-import axios from "axios";
 import {updateWork} from "./public/updateWork.js";
 import * as core from "@actions/core";
+import {encryptSb3} from "./utils/encrypt.js";
+import {PassThrough} from "stream";
+import {Buffer} from "buffer";
 
 const assetsBaseUrl = "https://m.ccw.site/";
 
@@ -41,7 +43,8 @@ export function main({
                          userId
                      }) {
     setAuthData(token, userId);
-    return uploadSb3File({oid, sb3FilePath})
+    const newSb3FileName = crypto.randomUUID().replaceAll("-", "");
+    return uploadSb3File({oid, sb3FilePath, newSb3FileName})
         .then(() => {
             return Promise.all([uploadCover(coverFilePath), getWorkDetail(oid)]);
         })
@@ -49,12 +52,6 @@ export function main({
             const {latestProjectLink, screenMode} = res?.body;
             const match = latestProjectLink.toString().match(/user_projects_sb3\/(\d+)\//);
             const userId = match ? match[1] : null;
-            const newSb3FileUrl = `user_projects_sb3/${userId}/${crypto.randomUUID().replaceAll("-", "")}.sb3`;
-            await copySb3File(latestProjectLink, newSb3FileUrl)
-                .catch(err => {
-                    console.error("copy sb3 file error :", err);
-                    throw err;
-                });
 
             await updateWork({
                 oid: oid,
@@ -79,7 +76,7 @@ export function main({
                 screenMode: screenMode,
                 featuredCoverLink: assetsBaseUrl + coverFileName,
                 coverLink: assetsBaseUrl + coverFileName,
-                projectLink: assetsBaseUrl + newSb3FileUrl
+                projectLink: assetsBaseUrl + `user_projects_sb3/${userId}/${newSb3FileName}.sb3`,
             });
         });
 }
@@ -90,16 +87,6 @@ run().then(res => {
     console.error(err);
 });
 
-function copySb3File(fileUrl, destinationUrl) {
-    return axios({
-        url: fileUrl,
-        method: 'GET',
-        responseType: 'stream'
-    }).then(response => {
-        return uploadFile(destinationUrl, response.data, "stream");
-    })
-}
-
 function uploadCover(coverPath) {
     const extname = path.extname(coverPath);
     const coverFileName = `works-covers/${crypto.randomUUID()}${extname}`;
@@ -108,15 +95,14 @@ function uploadCover(coverPath) {
     }));
 }
 
-export async function uploadSb3File
-({
-     oid,
-     sb3FilePath,
- }) {
+export async function uploadSb3File({oid, sb3FilePath, newSb3FileName}) {
     const {latestProjectLink} = await getWorkDetail(oid)
         .then(res => {
             return res?.body;
         });
+    const match = latestProjectLink.match(/user_projects_sb3\/(\d+)\/([a-f0-9]{32})\.sb3/);
+    const userId = match ? match[1] : null;
+    const baseNameNoExt = match ? match[2] : null;
 
     const directory = await unzipper.Open.file(sb3FilePath);
 
@@ -130,10 +116,21 @@ export async function uploadSb3File
             projectJsonBuffer = await entry.buffer();
             const archive = archiver("zip");
             console.log("Uploading project.json.zip ...");
-            const projectLink = latestProjectLink.split("https://m.ccw.site/")[1];
-            assetsUploadPromises.push(uploadFile(projectLink, archive, "stream"));
             archive.append(projectJsonBuffer, {name: "project.json"});
-            archive.finalize();
+
+            const buffer = archiveToBuffer(archive);
+            assetsUploadPromises.push(uploadProjectJsonZip({
+                buffer: await buffer,
+                userId: userId,
+                baseNameNoExt: baseNameNoExt
+            }));
+            if (newSb3FileName) {
+                assetsUploadPromises.push(uploadProjectJsonZip({
+                    buffer: await buffer,
+                    userId: userId,
+                    baseNameNoExt: newSb3FileName
+                }));
+            }
         } else {
             console.log("Uploading asset:", path.basename(filePath));
             const content = await entry.stream();
@@ -142,6 +139,29 @@ export async function uploadSb3File
     }
 
     return Promise.all(assetsUploadPromises);
+}
+
+export async function archiveToBuffer(archive) {
+    return new Promise((resolve, reject) => {
+        const passThrough = new PassThrough();
+        const chunks = [];
+
+        passThrough.on('data', chunk => chunks.push(chunk));
+        passThrough.on('end', () => {
+            resolve(Buffer.concat(chunks));
+        });
+
+        archive.on('error', err => reject(err));
+
+        archive.pipe(passThrough);
+
+        archive.finalize();
+    });
+}
+
+export function uploadProjectJsonZip({buffer, userId, baseNameNoExt}) {
+    const projectJsonZipPath = `user_projects_sb3/${userId}/${baseNameNoExt}.sb3`;
+    return uploadFile(projectJsonZipPath, encryptSb3(buffer, baseNameNoExt));
 }
 
 function getAssetPath(assetName) {
