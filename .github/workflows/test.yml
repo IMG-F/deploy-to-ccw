@@ -8,4 +8,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Dump context
-        run: echo '${{ toJson(github.event) }}'
+        run: echo '${{ toJson(github.event.head_commit.message) }}'
