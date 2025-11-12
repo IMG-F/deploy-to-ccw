@@ -11,4 +11,4 @@ jobs:
         uses: actions/checkout@v4
     
       - name: Dump context
-        run: echo '${{ github.event.head_commit.message }}'
+        run: echo /home/runner/work/_temp/_github_workflow/event.json
