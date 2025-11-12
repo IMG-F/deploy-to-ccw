@@ -7,5 +7,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+    
       - name: Dump context
-        run: echo '${{ toJson(github.event.head_commit.message) }}'
+        run: echo '${{ toJson(github) }}'
