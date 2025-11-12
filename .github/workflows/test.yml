@@ -11,4 +11,4 @@ jobs:
         uses: actions/checkout@v4
     
       - name: Dump context
-        run: echo '${{ toJson(github) }}'
+        run: echo '${{ github.event.head_commit.message }}'
